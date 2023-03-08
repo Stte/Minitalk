@@ -1,40 +1,40 @@
 #include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <unistd.h>
+#include "libft.h"
 
 void	handle_signal(int sig, siginfo_t *info, void *ucontext)
 {
-	// printf("stop! %d", sig);
+	(void) ucontext;
+	(void) info;
+	static uint32_t byte = 0;
+	static uint32_t i = 0;
+
+	if (sig == SIGUSR2)
+		byte = byte | 1;
+	i++;
+	if (i > 7)
+	{
+		ft_putchar_fd(byte, 1);
+		i = 0;
+		byte = 0;
+	}
+	byte <<= 1;
 }
 
 int	main()
 {
 	struct sigaction sa;
+	ft_putnbr_fd(getpid(), 1);
+	ft_putchar_fd('\n', 1);
 	sa.sa_sigaction = &handle_signal;
 	sa.sa_flags = SA_SIGINFO;
 	sigaction(SIGUSR1, &sa, NULL);
 	sigaction(SIGUSR2, &sa, NULL);
+	while (1)
+		pause();
 
-	int x;
-	scanf("%d", &x);
 	return (0);
-
-	// sigaction(SA_SIGINFO)
 }
-
-
-// SIGUSR1
-// SIGUSR2
-
-
-// KILL(PID, SIGUSR1)
-
-
-//getpid
-
-
-
-
 
 // Cerver prints PID
 // Client takes two parameters:
