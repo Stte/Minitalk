@@ -5,7 +5,6 @@
 void	handle_signal(int sig, siginfo_t *info, void *ucontext)
 {
 	(void) ucontext;
-	(void) info;
 	static uint32_t byte = 0;
 	static uint32_t i = 0;
 
@@ -14,11 +13,15 @@ void	handle_signal(int sig, siginfo_t *info, void *ucontext)
 	i++;
 	if (i > 7)
 	{
-		ft_putchar_fd(byte, 1);
+		if (byte)
+			ft_putchar_fd(byte, 1);
+		else
+			ft_putchar_fd('\n', 1);
 		i = 0;
 		byte = 0;
 	}
 	byte <<= 1;
+	kill(info->si_pid, SIGUSR1);
 }
 
 int	main()
@@ -32,7 +35,6 @@ int	main()
 	sigaction(SIGUSR2, &sa, NULL);
 	while (1)
 		pause();
-
 	return (0);
 }
 
