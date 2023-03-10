@@ -2,26 +2,51 @@
 #include <unistd.h>
 #include "libft.h"
 
-void	handle_signal(int sig, siginfo_t *info, void *ucontext)
-{
-	(void) ucontext;
-	static uint32_t byte = 0;
-	static uint32_t i = 0;
+// change the printing after sending message received
 
+static void	handle_byte(t_vec *message, uint32_t byte, siginfo_t *info)
+{
+	if (byte)
+	{
+		if(vec_push(message, &byte) < 0)
+			exit(0);
+	}
+	else
+	{
+		if(vec_push(message, "\0") < 0)
+			exit(0);
+		ft_putendl_fd((char *)message->memory, 1);
+		vec_free(message);
+		kill(info->si_pid, SIGUSR1);
+	}
+}
+
+static void	handle_signal(int sig, siginfo_t *info, void *ucontext)
+{
+	static uint32_t byte = 0;
+	static uint32_t bits_received = 0;
+	static t_vec message;
+
+	(void) ucontext;
+	if (!info->si_pid)
+	{
+		ft_putstr_fd("Error: Two clients at the same time\n", 1);
+		exit(0);
+	}
+	if (!message.memory)
+		if (vec_new(&message, 10, sizeof(char)) < 0)
+			exit(0);
 	if (sig == SIGUSR2)
 		byte = byte | 1;
-	i++;
-	if (i > 7)
+	bits_received++;
+	if (bits_received > 7)
 	{
-		if (byte)
-			ft_putchar_fd(byte, 1);
-		else
-			ft_putchar_fd('\n', 1);
-		i = 0;
+		handle_byte(&message, byte, info);
+		bits_received = 0;
 		byte = 0;
 	}
-	byte <<= 1;
-	kill(info->si_pid, SIGUSR1);
+	else
+		byte <<= 1;
 }
 
 int	main()
@@ -37,35 +62,3 @@ int	main()
 		pause();
 	return (0);
 }
-
-// Cerver prints PID
-// Client takes two parameters:
-	// server PID
-	// string to send
-// Client send the string to server
-// Once the string has been received, the server must print it.
-
-/** 1 second for displaying 100 characters is way too much! !! **/
-
-// Your server should be able to receive strings from several clients in a row without
-// needing to restart.
-
-// The communication between your client and your server has to be done only using
-// UNIX signals.
-// • You can only use these two signals: SIGUSR1 and SIGUSR2.
-
-// Allowed functions:
-// ◦ write
-// ◦ ft_printf and any equivalent YOU coded
-// ◦ signal
-// ◦ sigemptyset
-// ◦ sigaddset
-// ◦ sigaction
-// ◦ kill
-// ◦ getpid
-// ◦ malloc
-// ◦ free
-// ◦ pause
-// ◦ sleep
-// ◦ usleep
-// ◦ exit
